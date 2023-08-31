@@ -19,25 +19,25 @@ use Manticoresearch\Buddy\Core\Plugin\BasePayload;
  * which can be as a result of only comments in it that we strip
  */
 final class Payload extends BasePayload {
-	public readonly string $path;
-	public readonly string $cluster;
-	public readonly string $table;
-	public readonly string $structure;
-	public readonly string $extra;
-	public readonly int $shardCount;
-	public readonly int $replicationFactor;
+	public string $path;
+	public string $cluster;
+	public string $table;
+	public string $structure;
+	public string $extra;
+	public int $shardCount;
+	public int $replicationFactor;
 
   /**
 	 * @param Request $request
 	 * @return static
 	 */
 	public static function fromRequest(Request $request): static {
-		$pattern = "/CREATE\s+TABLE\s+"
-	    . '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s]+)\s*'
-	    . '\((?P<structure>.+?)\)\s*' // This line is changed to match table structure
-	    . '(?:shards=(?P<shards>\d+)\s*)?'
-	    . '(?:rf=(?P<rf>\d+)\s*)?'
-	    . '(?P<extra>.*)/ius';
+		$pattern = '/CREATE\s+TABLE\s+'
+		. '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s]+)\s*'
+		. '\((?P<structure>.+?)\)\s*' // This line is changed to match table structure
+		. '(?:shards=(?P<shards>\d+)\s*)?'
+		. '(?:rf=(?P<rf>\d+)\s*)?'
+		. '(?P<extra>.*)/ius';
 
 		if (!preg_match($pattern, $request->payload, $matches)) {
 			QueryParseError::throw('Failed to parse query');
@@ -46,11 +46,11 @@ final class Payload extends BasePayload {
 		// We just need to do something, but actually its' just for PHPstan
 		$self->path = $request->path;
 		$self->cluster = $matches['cluster'] ?? '';
-	  $self->table = $matches['table'];
-	  $self->structure = $matches['structure'];
-	  $self->shardCount = (int)($matches['shards'] ?? 2);
-	  $self->replicationFactor = (int)($matches['rf'] ?? 2);
-	  $self->extra = $matches['extra'];
+		$self->table = $matches['table'];
+		$self->structure = $matches['structure'];
+		$self->shardCount = (int)($matches['shards'] ?? 2);
+		$self->replicationFactor = (int)($matches['rf'] ?? 2);
+		$self->extra = $matches['extra'];
 		return $self;
 	}
 

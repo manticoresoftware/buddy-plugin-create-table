@@ -10,7 +10,6 @@
 */
 namespace Manticoresearch\Buddy\Plugin\CreateTable;
 
-use Manticoresearch\Buddy\Base\Sharding\Thread;
 use Manticoresearch\Buddy\Core\Plugin\BaseHandler;
 use Manticoresearch\Buddy\Core\Task\Task;
 use Manticoresearch\Buddy\Core\Task\TaskResult;
@@ -35,8 +34,6 @@ final class Handler extends BaseHandler {
 	 */
 	public function run(Runtime $runtime): Task {
 		$args = $this->payload->toArgs();
-		Thread::instance()->execute('shard', $args);
-
 		// TODO: what we should do here?
 		$taskFn = static function (): TaskResult {
 			return TaskResult::none();
@@ -44,7 +41,8 @@ final class Handler extends BaseHandler {
 
 		return Task::createInRuntime(
 			$runtime, $taskFn, []
-		)->run();
+		)->on('run', fn() => static::processHook('shard', [$args]))
+		 ->run();
 	}
 
 	/**
