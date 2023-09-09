@@ -34,9 +34,9 @@ final class Payload extends BasePayload {
 	public static function fromRequest(Request $request): static {
 		$pattern = '/CREATE\s+TABLE\s+'
 		. '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s]+)\s*'
-		. '\((?P<structure>.+?)\)\s*' // This line is changed to match table structure
-		. '(?:shards=(?P<shards>\d+)\s*)?'
-		. '(?:rf=(?P<rf>\d+)\s*)?'
+		. '(\((?P<structure>.+?)\)\s*)?' // This line is changed to match table structure
+		. '(?:shards=(?P<shards>\d+|\'\d+\')\s*)?'
+		. '(?:rf=(?P<rf>\d+|\'\d+\')\s*)?'
 		. '(?P<extra>.*)/ius';
 
 		if (!preg_match($pattern, $request->payload, $matches)) {
@@ -59,7 +59,9 @@ final class Payload extends BasePayload {
 	 * @return bool
 	 */
 	public static function hasMatch(Request $request): bool {
-		return stripos($request->payload, 'create table') === 0;
+		return strpos($request->error, 'P03') === 0
+			&& stripos($request->error, 'syntax error')
+			&& stripos($request->payload, 'create table') === 0;
 	}
 
 	/**

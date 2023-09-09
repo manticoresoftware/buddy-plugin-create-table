@@ -36,6 +36,15 @@ final class Handler extends BaseHandlerWithClient {
 	public function run(Runtime $runtime): Task {
 		$args = $this->payload->toArgs();
 
+		// Try to validate that we do not create the same table we have
+		$q = "SHOW CREATE TABLE {$this->payload->table}";
+		$resp = $this->manticoreClient->sendRequest($q);
+		/** @var array{0:array{data?:array{0:array{value:string}}}} $result */
+		$result = $resp->getResult();
+		if (isset($result[0]['data'][0])) {
+			return static::getErrorTask($runtime);
+		}
+
 		// We are blocking until final state and return the results
 		$taskFn = static function (Payload $payload, Client $client): TaskResult {
 			$ts = time();
@@ -66,5 +75,19 @@ final class Handler extends BaseHandlerWithClient {
 			$runtime, $taskFn, [$this->payload, $this->manticoreClient]
 		)->on('run', fn() => static::processHook('shard', [$args]))
 		 ->run();
+	}
+
+	/**
+	 * Get and run task that we should run on error
+	 * @param  Runtime $runtime
+	 * @return Task
+	 */
+	protected function getErrorTask(Runtime $runtime): Task {
+		$taskFn = static function (string $table): TaskResult {
+			return TaskResult::withError("table '{$table}': CREATE TABLE failed: table '{$table}' already exists");
+		};
+		return Task::createInRuntime(
+			$runtime, $taskFn, [$this->payload->table]
+		)->run();
 	}
 }
