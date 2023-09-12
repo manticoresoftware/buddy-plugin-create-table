@@ -68,20 +68,19 @@ final class Payload extends BasePayload {
 	 * Convert the current state into array
 	 * that we use for args in event
 	 * @return array{
-	 * cluster:string,
-	 * table:string,
-	 * structure:string,
-	 * extra:string,
+	 * table:array{cluster:string,name:string,structure:string,extra:string},
 	 * replicationFactor:int,
 	 * shardCount:int
 	 * }
 	 */
 	public function toArgs(): array {
 		return [
-			'cluster' => $this->cluster,
-			'table' => $this->table,
-			'structure' => $this->structure,
-			'extra' => $this->extra,
+			'table' => [
+				'cluster' => $this->cluster,
+				'name' => $this->table,
+				'structure' => $this->structure,
+				'extra' => $this->extra,
+			],
 			'replicationFactor' => $this->replicationFactor,
 			'shardCount' => $this->shardCount,
 		];
