@@ -33,7 +33,7 @@ final class Payload extends BasePayload {
 	 */
 	public static function fromRequest(Request $request): static {
 		$pattern = '/CREATE\s+TABLE\s+'
-		. '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s]+)\s*'
+		. '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s\()]+)\s*'
 		. '(\((?P<structure>.+?)\)\s*)?' // This line is changed to match table structure
 		. '(?:shards=(?P<shards>\d+|\'\d+\')\s*)?'
 		. '(?:rf=(?P<rf>\d+|\'\d+\')\s*)?'
