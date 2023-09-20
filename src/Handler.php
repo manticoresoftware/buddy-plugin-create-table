@@ -46,7 +46,11 @@ final class Handler extends BaseHandlerWithClient {
 		}
 
 		// We are blocking until final state and return the results
-		$taskFn = static function (Payload $payload, Client $client): TaskResult {
+		$taskFn = static function (string $args): TaskResult {
+			/** @var Payload $payload */
+			/** @var Client $client */
+			/** @phpstan-ignore-next-line */
+			[$payload, $client] = unserialize($args);
 			$ts = time();
 			$value = [];
 			while (true) {
@@ -72,7 +76,9 @@ final class Handler extends BaseHandlerWithClient {
 		};
 
 		return Task::createInRuntime(
-			$runtime, $taskFn, [$this->payload, $this->manticoreClient]
+			$runtime,
+			$taskFn,
+			[serialize([$this->payload, $this->manticoreClient])]
 		)->on('run', fn() => static::processHook('shard', [$args]))
 		 ->run();
 	}
