@@ -66,7 +66,7 @@ final class Handler extends BaseHandlerWithClient {
 				if ($status !== 'processing') {
 					return TaskResult::raw($value['result']);
 				}
-				if ((time() - $ts) > 15) {
+				if ((time() - $ts) > 30) {
 					break;
 				}
 				usleep(500000);
