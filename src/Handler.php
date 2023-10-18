@@ -15,7 +15,6 @@ use Manticoresearch\Buddy\Core\Plugin\BaseHandlerWithClient;
 use Manticoresearch\Buddy\Core\Task\Task;
 use Manticoresearch\Buddy\Core\Task\TaskResult;
 use RuntimeException;
-use parallel\Runtime;
 
 final class Handler extends BaseHandlerWithClient {
 	/**
@@ -33,24 +32,18 @@ final class Handler extends BaseHandlerWithClient {
 	 * @return Task
 	 * @throws RuntimeException
 	 */
-	public function run(Runtime $runtime): Task {
-		$args = $this->payload->toArgs();
-
+	public function run(): Task {
 		// Try to validate that we do not create the same table we have
 		$q = "SHOW CREATE TABLE {$this->payload->table}";
 		$resp = $this->manticoreClient->sendRequest($q);
 		/** @var array{0:array{data?:array{0:array{value:string}}}} $result */
 		$result = $resp->getResult();
 		if (isset($result[0]['data'][0])) {
-			return static::getErrorTask($runtime);
+			return static::getErrorTask();
 		}
 
 		// We are blocking until final state and return the results
-		$taskFn = static function (string $args): TaskResult {
-			/** @var Payload $payload */
-			/** @var Client $client */
-			/** @phpstan-ignore-next-line */
-			[$payload, $client] = unserialize($args);
+		$taskFn = static function (Payload $payload, Client $client): TaskResult {
 			$ts = time();
 			$value = [];
 			while (true) {
@@ -71,29 +64,27 @@ final class Handler extends BaseHandlerWithClient {
 				}
 				usleep(500000);
 			}
-
 			return TaskResult::withError('Waiting timeout exceeded.');
 		};
 
-		return Task::createInRuntime(
-			$runtime,
+		$args = $this->payload->toArgs();
+		return Task::create(
 			$taskFn,
-			[serialize([$this->payload, $this->manticoreClient])]
+			[$this->payload, $this->manticoreClient]
 		)->on('run', fn() => static::processHook('shard', [$args]))
 		 ->run();
 	}
 
 	/**
 	 * Get and run task that we should run on error
-	 * @param  Runtime $runtime
 	 * @return Task
 	 */
-	protected function getErrorTask(Runtime $runtime): Task {
+	protected function getErrorTask(): Task {
 		$taskFn = static function (string $table): TaskResult {
 			return TaskResult::withError("table '{$table}': CREATE TABLE failed: table '{$table}' already exists");
 		};
-		return Task::createInRuntime(
-			$runtime, $taskFn, [$this->payload->table]
+		return Task::create(
+			$taskFn, [$this->payload->table]
 		)->run();
 	}
 }
