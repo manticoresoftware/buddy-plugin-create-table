@@ -16,7 +16,7 @@
 	],
 	"minimum-stability": "stable",
 	"require": {
-		"manticoresoftware/buddy-core": "dev-main"
+		"manticoresoftware/buddy-core": "^v0.1.0"
 	},
 	"require-dev": {
 		"phpstan/phpstan": "^1.8",
