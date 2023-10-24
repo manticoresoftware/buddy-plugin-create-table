@@ -712,12 +712,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/manticoresoftware/buddy-core.git",
-                "reference": "822d7c4710aa2dc8bbf8bfba43ac42d61955092c"
+                "reference": "63b7763b90acf27ab1c0b5460f8fea8cc76bdd28"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/manticoresoftware/buddy-core/zipball/822d7c4710aa2dc8bbf8bfba43ac42d61955092c",
-                "reference": "822d7c4710aa2dc8bbf8bfba43ac42d61955092c",
+                "url": "https://api.github.com/repos/manticoresoftware/buddy-core/zipball/63b7763b90acf27ab1c0b5460f8fea8cc76bdd28",
+                "reference": "63b7763b90acf27ab1c0b5460f8fea8cc76bdd28",
                 "shasum": ""
             },
             "require": {
@@ -755,7 +755,7 @@
                 "issues": "https://github.com/manticoresoftware/buddy-core/issues",
                 "source": "https://github.com/manticoresoftware/buddy-core/tree/main"
             },
-            "time": "2023-10-18T07:51:34+00:00"
+            "time": "2023-10-24T05:06:41+00:00"
         },
         {
             "name": "php-ds/php-ds",
@@ -2328,16 +2328,16 @@
         },
         {
             "name": "symfony/var-exporter",
-            "version": "v6.3.4",
+            "version": "v6.3.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/var-exporter.git",
-                "reference": "df1f8aac5751871b83d30bf3e2c355770f8f0691"
+                "reference": "374d289c13cb989027274c86206ddc63b16a2441"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/df1f8aac5751871b83d30bf3e2c355770f8f0691",
-                "reference": "df1f8aac5751871b83d30bf3e2c355770f8f0691",
+                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/374d289c13cb989027274c86206ddc63b16a2441",
+                "reference": "374d289c13cb989027274c86206ddc63b16a2441",
                 "shasum": ""
             },
             "require": {
@@ -2382,7 +2382,7 @@
                 "serialize"
             ],
             "support": {
-                "source": "https://github.com/symfony/var-exporter/tree/v6.3.4"
+                "source": "https://github.com/symfony/var-exporter/tree/v6.3.6"
             },
             "funding": [
                 {
@@ -2398,7 +2398,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-08-16T18:14:47+00:00"
+            "time": "2023-10-13T09:16:49+00:00"
         }
     ],
     "packages-dev": [
