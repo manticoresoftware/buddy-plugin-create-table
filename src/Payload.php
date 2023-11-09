@@ -51,6 +51,7 @@ final class Payload extends BasePayload {
 		$self->shardCount = (int)($matches['shards'] ?? 2);
 		$self->replicationFactor = (int)($matches['rf'] ?? 2);
 		$self->extra = $matches['extra'];
+		$self->validate();
 		return $self;
 	}
 
@@ -62,6 +63,16 @@ final class Payload extends BasePayload {
 		return strpos($request->error, 'P03') === 0
 			&& stripos($request->error, 'syntax error')
 			&& stripos($request->payload, 'create table') === 0;
+	}
+
+	/**
+	 * Run query parsed data validation
+	 * @return void
+	 */
+	protected function validate(): void {
+		if (!$this->cluster && $this->replicationFactor > 1) {
+			throw QueryParseError::create('You cannot set rf greater than 1 when creating single node sharded table.');
+		}
 	}
 
 	/**

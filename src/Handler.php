@@ -15,6 +15,7 @@ use Manticoresearch\Buddy\Core\Plugin\BaseHandlerWithClient;
 use Manticoresearch\Buddy\Core\Task\Task;
 use Manticoresearch\Buddy\Core\Task\TaskResult;
 use RuntimeException;
+use Swoole\Coroutine;
 
 final class Handler extends BaseHandlerWithClient {
 	/**
@@ -62,7 +63,7 @@ final class Handler extends BaseHandlerWithClient {
 				if ((time() - $ts) > 30) {
 					break;
 				}
-				usleep(500000);
+				Coroutine::sleep(1);
 			}
 			return TaskResult::withError('Waiting timeout exceeded.');
 		};
