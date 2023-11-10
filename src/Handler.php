@@ -40,7 +40,21 @@ final class Handler extends BaseHandlerWithClient {
 		/** @var array{0:array{data?:array{0:array{value:string}}}} $result */
 		$result = $resp->getResult();
 		if (isset($result[0]['data'][0])) {
-			return static::getErrorTask();
+			return static::getErrorTask(
+				"table '{$this->payload->table}': CREATE TABLE failed: table '{$this->payload->table}' already exists"
+			);
+		}
+
+		// Check that cluster exists
+		if ($this->payload->cluster) {
+			$result = $this->manticoreClient
+				->sendRequest("SHOW STATUS LIKE 'cluster_{$this->payload->cluster}_nodes_view'")
+				->getResult();
+			if (!isset($result[0]['data'][0])) {
+				return static::getErrorTask(
+					"Cluster '{$this->payload->cluster}' does not exist"
+				);
+			}
 		}
 
 		// We are blocking until final state and return the results
@@ -78,14 +92,15 @@ final class Handler extends BaseHandlerWithClient {
 
 	/**
 	 * Get and run task that we should run on error
+	 * @param string $message
 	 * @return Task
 	 */
-	protected function getErrorTask(): Task {
-		$taskFn = static function (string $table): TaskResult {
-			return TaskResult::withError("table '{$table}': CREATE TABLE failed: table '{$table}' already exists");
+	protected function getErrorTask(string $message): Task {
+		$taskFn = static function (string $message): TaskResult {
+			return TaskResult::withError($message);
 		};
 		return Task::create(
-			$taskFn, [$this->payload->table]
+			$taskFn, [$message]
 		)->run();
 	}
 }
