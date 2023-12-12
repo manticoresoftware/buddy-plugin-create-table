@@ -33,23 +33,40 @@ final class Payload extends BasePayload {
 	 */
 	public static function fromRequest(Request $request): static {
 		$pattern = '/CREATE\s+TABLE\s+'
-		. '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s\()]+)\s*'
-		. '(\((?P<structure>.+?)\)\s*)?' // This line is changed to match table structure
-		. '(?:shards=(?P<shards>\d+|\'\d+\')\s+)'
-		. '(?:rf=(?P<rf>\d+|\'\d+\')\s*)'
-		. '(?P<extra>.*)/ius';
+	    . '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s\()]+)\s*'
+	    . '(\((?P<structure>.+?)\)\s*)?' // Matches the table structure
+	    . '(?P<options>(?:\w+=\d+|\'\d+\')\s*(?:\w+=\d+|\'\d+\')*\s*)' // Matches all options as a single string
+	    . '(?P<extra>.*)/ius';
 
 		if (!preg_match($pattern, $request->payload, $matches)) {
 			QueryParseError::throw('Failed to parse query');
 		}
+
+		// Split the options string into key-value pairs
+		if (!preg_match_all(
+			'/(?P<key>\w+)=(?P<value>\d+|\'\d+\')/',
+			$matches['options'],
+			$optionMatches,
+			PREG_SET_ORDER
+		)) {
+			QueryParseError::throw('Failed to options in the query');
+		}
+
+		$options = [];
+		foreach ($optionMatches as $optionMatch) {
+	    $key = $optionMatch['key'];
+	    $value = trim($optionMatch['value'], "'");
+	    $options[$key] = $value;
+		}
+
 		$self = new static();
 		// We just need to do something, but actually its' just for PHPstan
 		$self->path = $request->path;
 		$self->cluster = $matches['cluster'] ?? '';
 		$self->table = $matches['table'];
 		$self->structure = $matches['structure'];
-		$self->shardCount = (int)($matches['shards'] ?? 2);
-		$self->replicationFactor = (int)($matches['rf'] ?? 2);
+		$self->shardCount = (int)($options['shards'] ?? 2);
+		$self->replicationFactor = (int)($options['rf'] ?? 2);
 		$self->extra = $matches['extra'];
 		$self->validate();
 		return $self;
