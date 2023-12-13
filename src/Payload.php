@@ -33,10 +33,10 @@ final class Payload extends BasePayload {
 	 */
 	public static function fromRequest(Request $request): static {
 		$pattern = '/CREATE\s+TABLE\s+'
-	    . '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s\()]+)\s*'
-	    . '(\((?P<structure>.+?)\)\s*)?' // Matches the table structure
-	    . '(?P<options>(?:\w+=\d+|\'\d+\')\s*(?:\w+=\d+|\'\d+\')*\s*)' // Matches all options as a single string
-	    . '(?P<extra>.*)/ius';
+		. '(?:(?P<cluster>[^:\s]+):)?(?P<table>[^:\s\()]+)\s*'
+		. '(\((?P<structure>.+?)\)\s*)?' // Matches the table structure
+		. '(?P<options>(?:\w+=\d+|\'\d+\')\s*(?:\w+=\d+|\'\d+\')*\s*)' // Matches all options as a single string
+		. '(?P<extra>.*)/ius';
 
 		if (!preg_match($pattern, $request->payload, $matches)) {
 			QueryParseError::throw('Failed to parse query');
@@ -54,9 +54,9 @@ final class Payload extends BasePayload {
 
 		$options = [];
 		foreach ($optionMatches as $optionMatch) {
-	    $key = $optionMatch['key'];
-	    $value = trim($optionMatch['value'], "'");
-	    $options[$key] = $value;
+			$key = $optionMatch['key'];
+			$value = trim($optionMatch['value'], "'");
+			$options[$key] = $value;
 		}
 
 		$self = new static();

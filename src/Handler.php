@@ -34,27 +34,9 @@ final class Handler extends BaseHandlerWithClient {
 	 * @throws RuntimeException
 	 */
 	public function run(): Task {
-		// Try to validate that we do not create the same table we have
-		$q = "SHOW CREATE TABLE {$this->payload->table}";
-		$resp = $this->manticoreClient->sendRequest($q);
-		/** @var array{0:array{data?:array{0:array{value:string}}}} $result */
-		$result = $resp->getResult();
-		if (isset($result[0]['data'][0])) {
-			return static::getErrorTask(
-				"table '{$this->payload->table}': CREATE TABLE failed: table '{$this->payload->table}' already exists"
-			);
-		}
-
-		// Check that cluster exists
-		if ($this->payload->cluster) {
-			$result = $this->manticoreClient
-				->sendRequest("SHOW STATUS LIKE 'cluster_{$this->payload->cluster}_nodes_view'")
-				->getResult();
-			if (!isset($result[0]['data'][0])) {
-				return static::getErrorTask(
-					"Cluster '{$this->payload->cluster}' does not exist"
-				);
-			}
+		$task = $this->validate();
+		if ($task) {
+			return $task;
 		}
 
 		// We are blocking until final state and return the results
@@ -88,6 +70,46 @@ final class Handler extends BaseHandlerWithClient {
 			[$this->payload, $this->manticoreClient]
 		)->on('run', fn() => static::processHook('shard', [$args]))
 		 ->run();
+	}
+
+	/**
+	 * Validate the request and return Task with error or null if ok
+	 * @return ?Task
+	 */
+	protected function validate(): ?Task {
+		// Try to validate that we do not create the same table we have
+		$q = "SHOW CREATE TABLE {$this->payload->table}";
+		$resp = $this->manticoreClient->sendRequest($q);
+		/** @var array{0:array{data?:array{0:array{value:string}}}} $result */
+		$result = $resp->getResult();
+		if (isset($result[0]['data'][0])) {
+			return static::getErrorTask(
+				"table '{$this->payload->table}': CREATE TABLE failed: table '{$this->payload->table}' already exists"
+			);
+		}
+
+		$nodeCount = 1;
+		// Check that cluster exists
+		if ($this->payload->cluster) {
+			/** @var array{0:array{data?:array{0:array{Value:string}}}} $result */
+			$result = $this->manticoreClient
+				->sendRequest("SHOW STATUS LIKE 'cluster_{$this->payload->cluster}_nodes_view'")
+				->getResult();
+			if (!isset($result[0]['data'][0])) {
+				return static::getErrorTask(
+					"Cluster '{$this->payload->cluster}' does not exist"
+				);
+			}
+			$nodeCount = substr_count($result[0]['data'][0]['Value'], 'replication');
+		}
+
+		if ($nodeCount < $this->payload->replicationFactor) {
+			return static::getErrorTask(
+				"The node count ({$nodeCount}) is lower than replication factor ({$this->payload->replicationFactor})"
+			);
+		}
+
+		return null;
 	}
 
 	/**
