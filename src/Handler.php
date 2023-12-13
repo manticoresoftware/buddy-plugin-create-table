@@ -101,6 +101,13 @@ final class Handler extends BaseHandlerWithClient {
 				);
 			}
 			$nodeCount = substr_count($result[0]['data'][0]['Value'], 'replication');
+
+			if ($nodeCount < 2) {
+				return static::getErrorTask(
+					"The node count for cluster {$this->payload->cluster} is too low: {$nodeCount}."
+					.' You can create local sharded table.'
+				);
+			}
 		}
 
 		if ($nodeCount < $this->payload->replicationFactor) {
