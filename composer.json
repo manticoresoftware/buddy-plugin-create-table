@@ -1,11 +1,11 @@
 {
-	"name": "manticoresoftware/buddy-plugin-create-table",
+	"name": "manticoresoftware/buddy-plugin-modify-table",
 	"description": "The Buddy create sharded table plugin",
 	"type": "library",
 	"license": "GPL-2.0-or-later",
 	"autoload": {
 		"psr-4": {
-			"Manticoresearch\\Buddy\\Plugin\\CreateTable\\": "src/"
+			"Manticoresearch\\Buddy\\Plugin\\ModifyTable\\": "src/"
 		}
 	},
 	"authors": [
