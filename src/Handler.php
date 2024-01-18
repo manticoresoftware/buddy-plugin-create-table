@@ -10,6 +10,7 @@
 */
 namespace Manticoresearch\Buddy\Plugin\CreateTable;
 
+use Closure;
 use Manticoresearch\Buddy\Core\ManticoreSearch\Client;
 use Manticoresearch\Buddy\Core\Plugin\BaseHandlerWithClient;
 use Manticoresearch\Buddy\Core\Task\Task;
@@ -34,42 +35,30 @@ final class Handler extends BaseHandlerWithClient {
 	 * @throws RuntimeException
 	 */
 	public function run(): Task {
-		$task = $this->validate();
-		if ($task) {
-			return $task;
+		$withSharding = $this->payload->withSharding();
+
+		// Validate that table does not exist first
+		if ($withSharding) {
+			$task = $this->validate();
+			if ($task) {
+				return $task;
+			}
 		}
 
 		// We are blocking until final state and return the results
-		$taskFn = static function (Payload $payload, Client $client): TaskResult {
-			$ts = time();
-			$value = [];
-			while (true) {
-				$q = "select `value` from sharding_state where `key` = 'table:{$payload->table}'";
-				$resp = $client->sendRequest($q);
-				$result = $resp->getResult();
-				/** @var array{0:array{data?:array{0:array{value:string}}}} $result */
-				if (isset($result[0]['data'][0]['value'])) {
-					$value = json_decode($result[0]['data'][0]['value'], true);
-				}
-				/** @var array{result:string,status?:string} $value */
-				$status = $value['status'] ?? 'processing';
-				if ($status !== 'processing') {
-					return TaskResult::raw($value['result']);
-				}
-				if ((time() - $ts) > 30) {
-					break;
-				}
-				Coroutine::sleep(1);
-			}
-			return TaskResult::withError('Waiting timeout exceeded.');
-		};
+		$taskFn = $withSharding ? static::getShardingFn() : static::getDefaultFn();
 
-		$args = $this->payload->toArgs();
-		return Task::create(
+		$task = Task::create(
 			$taskFn,
 			[$this->payload, $this->manticoreClient]
-		)->on('run', fn() => static::processHook('shard', [$args]))
-		 ->run();
+		);
+
+		if ($withSharding) {
+			$args = $this->payload->toShardArgs();
+			$task->on('run', fn() => static::processHook('shard', [$args]));
+		}
+
+		return $task->run();
 	}
 
 	/**
@@ -110,9 +99,9 @@ final class Handler extends BaseHandlerWithClient {
 			}
 		}
 
-		if ($nodeCount < $this->payload->replicationFactor) {
+		if ($nodeCount < $this->payload->options['rf']) {
 			return static::getErrorTask(
-				"The node count ({$nodeCount}) is lower than replication factor ({$this->payload->replicationFactor})"
+				"The node count ({$nodeCount}) is lower than replication factor ({$this->payload->options['rf']})"
 			);
 		}
 
@@ -131,5 +120,47 @@ final class Handler extends BaseHandlerWithClient {
 		return Task::create(
 			$taskFn, [$message]
 		)->run();
+	}
+
+	/**
+	 * Get task function for handling sharding case
+	 * @return Closure
+	 */
+	protected static function getShardingFn(): Closure {
+		return static function (Payload $payload, Client $client): TaskResult {
+			$ts = time();
+			$value = [];
+			while (true) {
+				$q = "select `value` from sharding_state where `key` = 'table:{$payload->table}'";
+				$resp = $client->sendRequest($q);
+				$result = $resp->getResult();
+				/** @var array{0:array{data?:array{0:array{value:string}}}} $result */
+				if (isset($result[0]['data'][0]['value'])) {
+					$value = json_decode($result[0]['data'][0]['value'], true);
+				}
+				/** @var array{result:string,status?:string} $value */
+				$status = $value['status'] ?? 'processing';
+				if ($status !== 'processing') {
+					return TaskResult::raw($value['result']);
+				}
+				if ((time() - $ts) > 30) {
+					break;
+				}
+				Coroutine::sleep(1);
+			}
+			return TaskResult::withError('Waiting timeout exceeded.');
+		};
+	}
+
+	/**
+	 * Get defatul task handle function that just proxy the query
+	 * @return Closure
+	 */
+	protected static function getDefaultFn(): Closure {
+		return static function (Payload $payload, Client $client): TaskResult {
+			$q = "{$payload->type} table {$payload->table} {$payload->structure} {$payload->extra}";
+			$result = $client->sendRequest($q)->getResult();
+			return TaskResult::raw([$result]);
+		};
 	}
 }
