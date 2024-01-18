@@ -8,7 +8,7 @@
   version. You should have received a copy of the GPL license along with this
   program; if you did not, you can find it at http://www.gnu.org/
 */
-namespace Manticoresearch\Buddy\Plugin\CreateTable;
+namespace Manticoresearch\Buddy\Plugin\ModifyTable;
 
 use Closure;
 use Manticoresearch\Buddy\Core\ManticoreSearch\Client;
